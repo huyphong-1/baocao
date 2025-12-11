@@ -1,44 +1,24 @@
 import React from "react";
-import Navbar from "./components/Navbar/Navbar";
-import Hero from "./components/Hero/Hero";
-import Products from "./components/Products/Products";
-import AOS from "aos";
-import "aos/dist/aos.css";
-import TopProducts from "./components/TopProducts/TopProducts";
-import Banner from "./components/Banner/Banner";
-import Subscribe from "./components/Subscribe/Subscribe";
-import Testimonials from "./components/Testimonials/Testimonials";
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
 import Footer from "./components/Footer/Footer";
-import Popup from "./components/Popup/Popup";
+import CartPage from "./pages/CartPage";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
 
 const App = () => {
-  const [orderPopup, setOrderPopup] = React.useState(false);
-
-  const handleOrderPopup = () => {
-    setOrderPopup(!orderPopup);
-  };
-  React.useEffect(() => {
-    AOS.init({
-      offset: 100,
-      duration: 800,
-      easing: "ease-in-sine",
-      delay: 100,
-    });
-    AOS.refresh();
-  }, []);
-
   return (
-    <div className="bg-white dark:bg-gray-900 dark:text-white duration-200">
-      <Navbar handleOrderPopup={handleOrderPopup} />
-      <Hero handleOrderPopup={handleOrderPopup} />
-      <Products />
-      <TopProducts handleOrderPopup={handleOrderPopup} />
-      <Banner />
-      <Subscribe />
-      <Products />
-      <Testimonials />
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
+      <Navbar />
+
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<HomePage />} />
+      </Routes>
+
       <Footer />
-      <Popup orderPopup={orderPopup} setOrderPopup={setOrderPopup} />
     </div>
   );
 };

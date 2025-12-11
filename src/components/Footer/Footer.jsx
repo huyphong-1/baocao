@@ -1,126 +1,38 @@
-import React from "react";
-import footerLogo from "../../assets/logo.png";
-import Banner from "../../assets/website/footer-pattern.jpg";
-import {
-  FaFacebook,
-  FaInstagram,
-  FaLinkedin,
-  FaLocationArrow,
-  FaMobileAlt,
-} from "react-icons/fa";
-
-const BannerImg = {
-  backgroundImage: `url(${Banner})`,
-  backgroundPosition: "bottom",
-  backgroundRepeat: "no-repeat",
-  backgroundSize: "cover",
-  height: "100%",
-  width: "100%",
-};
-
-const FooterLinks = [
-  {
-    title: "Home",
-    link: "/#",
-  },
-  {
-    title: "About",
-    link: "/#about",
-  },
-  {
-    title: "Contact",
-    link: "/#contact",
-  },
-  {
-    title: "Blog",
-    link: "/#blog",
-  },
-];
-
-const Footer = () => {
+export default function Footer() {
   return (
-    <div style={BannerImg} className="text-white">
-      <div className="container">
-        <div data-aos="zoom-in" className="grid md:grid-cols-3 pb-44 pt-5">
-          {/* company details */}
-          <div className="py-8 px-4">
-            <h1 className="sm:text-3xl text-xl font-bold sm:text-left text-justify mb-3 flex items-center gap-3">
-              <img src={footerLogo} alt="" className="max-w-[50px]" />
-              Shopsy
-            </h1>
-            <p>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Cum in
-              beatae ea recusandae blanditiis veritatis.
-            </p>
-          </div>
+    <footer id="support" className="py-8 bg-slate-950">
+      <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-4 gap-8 text-xs text-slate-300">
+        <div className="md:col-span-2">
+          <p className="font-semibold text-sm mb-2">TechPhone Store</p>
+          <p>
+            Chuyên điện thoại, tablet, phụ kiện chính hãng. Hỗ trợ sinh viên, trả góp 0%, ship nhanh
+            nội thành.
+          </p>
+        </div>
 
-          {/* Footer Links */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 col-span-2 md:pl-10">
-            <div>
-              <div className="py-8 px-4">
-                <h1 className="sm:text-xl text-xl font-bold sm:text-left text-justify mb-3">
-                  Important Links
-                </h1>
-                <ul className="flex flex-col gap-3">
-                  {FooterLinks.map((link) => (
-                    <li
-                      className="cursor-pointer hover:text-primary hover:translate-x-1 duration-300 text-gray-200"
-                      key={link.title}
-                    >
-                      <span>{link.title}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div>
-              <div className="py-8 px-4">
-                <h1 className="sm:text-xl text-xl font-bold sm:text-left text-justify mb-3">
-                  Links
-                </h1>
-                <ul className="flex flex-col gap-3">
-                  {FooterLinks.map((link) => (
-                    <li
-                      className="cursor-pointer hover:text-primary hover:translate-x-1 duration-300 text-gray-200"
-                      key={link.title}
-                    >
-                      <span>{link.title}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+        <div>
+          <p className="font-semibold text-sm mb-2">Hỗ trợ khách hàng</p>
+          <ul className="space-y-1">
+            <li>Hotline: 1900 9999</li>
+            <li>Zalo CSKH: 09xx xxx xxx</li>
+            <li>Đổi trả &amp; bảo hành</li>
+          </ul>
+        </div>
 
-            {/* social links */}
-
-            <div>
-              <div className="flex items-center gap-3 mt-6">
-                <a href="#">
-                  <FaInstagram className="text-3xl" />
-                </a>
-                <a href="#">
-                  <FaFacebook className="text-3xl" />
-                </a>
-                <a href="#">
-                  <FaLinkedin className="text-3xl" />
-                </a>
-              </div>
-              <div className="mt-6">
-                <div className="flex items-center gap-3">
-                  <FaLocationArrow />
-                  <p>Noida, Uttar Pradesh</p>
-                </div>
-                <div className="flex items-center gap-3 mt-3">
-                  <FaMobileAlt />
-                  <p>+91 123456789</p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div>
+          <p className="font-semibold text-sm mb-2">Kết nối</p>
+          <ul className="space-y-1">
+            <li>Facebook Fanpage</li>
+            <li>TikTok Shop</li>
+            <li>Shopee / Lazada</li>
+          </ul>
         </div>
       </div>
-    </div>
-  );
-};
 
-export default Footer;
+      <div className="max-w-6xl mx-auto px-4 mt-4 border-t border-slate-800 pt-4 text-[11px] text-slate-500 flex flex-wrap justify-between gap-2">
+        <p>© {new Date().getFullYear()} TechPhone. All rights reserved.</p>
+        <p>Made for practice by Zeus 🎧</p>
+      </div>
+    </footer>
+  );
+}
