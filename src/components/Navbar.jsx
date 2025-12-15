@@ -1,8 +1,14 @@
 // src/components/Navbar.jsx
-import React from "react";
-import { Link } from "react-router-dom";
-import { useCart } from "../pages/CartContext";   // ✅ đúng đường dẫn
-import Logo from "../assets/logo.png";            // ✅ xem bước 2 bên dưới
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { IoMdSearch } from "react-icons/io";
+import { FaCartShopping } from "react-icons/fa6";
+import { FaCaretDown } from "react-icons/fa";
+import DarkMode from "./DarkMode";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+
 
 const Menu = [
   { id: 1, name: "Điện thoại", link: "/phones" },
@@ -11,23 +17,90 @@ const Menu = [
   { id: 4, name: "Hỗ trợ", link: "/support" },
 ];
 
-const DropdownLinks = [
-  { id: 1, name: "Trending Products", link: "/#" },
-  { id: 2, name: "Best Selling", link: "/#" },
-  { id: 3, name: "Top Rated", link: "/#" },
-];
+const formatPrice = (n) =>
+  Number(n || 0).toLocaleString("vi-VN", { style: "currency", currency: "VND" });
 
 const Navbar = ({ handleOrderPopup }) => {
   const { cartCount } = useCart();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+
+  // ✅ Search state
+  const [keyword, setKeyword] = useState("");
+  const [results, setResults] = useState([]);
+  const [openSuggest, setOpenSuggest] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // ✅ Dropdown click-state (CÁCH A)
+  const [openTrending, setOpenTrending] = useState(false);
+  const trendingRef = useRef(null);
+
+  // ✅ Click outside => đóng dropdown Trending
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (trendingRef.current && !trendingRef.current.contains(e.target)) {
+        setOpenTrending(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  // ✅ Query Supabase khi gõ (debounce 300ms)
+  useEffect(() => {
+    const q = keyword.trim();
+
+    if (!q) {
+      setResults([]);
+      setOpenSuggest(false);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    const t = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("id,name,price,image,category")
+          .ilike("name", `%${q}%`)
+          .limit(6);
+
+        if (error) {
+          console.error("Supabase search error:", error);
+          setResults([]);
+        } else {
+          setResults(data || []);
+        }
+        setOpenSuggest(true);
+      } catch (err) {
+        console.error(err);
+        setResults([]);
+        setOpenSuggest(true);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(t);
+  }, [keyword]);
+
+  const goToProduct = (p) => {
+    // nếu chưa có detail page thì đổi sang:
+    // navigate(`/phones?search=${encodeURIComponent(keyword.trim())}`);
+    navigate(`/products/${p.id}`);
+    setOpenSuggest(false);
+    setKeyword("");
+  };
 
   return (
-    <div className="shadow-md bg-slate-950 text-slate-100 duration-200 relative z-40">
+    <div className="shadow-md bg-slate-950 text-slate-100 duration-200 sticky top-0 z-[9999]">
       {/* Thanh trên */}
       <div className="border-b border-slate-800">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            {/* Nếu chưa có logo.png thì tạm thời bỏ <img> này hoặc để 1 màu nền */}
             <div className="w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center text-sm font-bold">
               TP
             </div>
@@ -39,17 +112,58 @@ const Navbar = ({ handleOrderPopup }) => {
             </div>
           </Link>
 
-          {/* Search + nút Order + Darkmode */}
+          {/* Search + Order + Darkmode + Cart mobile */}
           <div className="flex items-center gap-3">
+            {/* Search box + dropdown */}
             <div className="hidden md:block relative">
               <input
                 type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                onFocus={() => {
+                  if (keyword.trim()) setOpenSuggest(true);
+                }}
+                onBlur={() => setTimeout(() => setOpenSuggest(false), 150)}
                 placeholder="Tìm theo tên điện thoại..."
                 className="w-52 md:w-64 bg-slate-900 border border-slate-700 rounded-full px-3 py-1.5 pr-8 text-xs outline-none focus:border-blue-500"
               />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
                 <IoMdSearch />
               </span>
+
+              {openSuggest && (
+                <div className="absolute top-full left-0 mt-2 w-full rounded-2xl border border-slate-700 bg-slate-900 shadow-xl overflow-hidden z-[9999]">
+                  {loading ? (
+                    <div className="p-3 text-xs text-slate-400">Đang tìm...</div>
+                  ) : results.length === 0 ? (
+                    <div className="p-3 text-xs text-slate-400">
+                      Không thấy sản phẩm phù hợp 🥲
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-slate-800">
+                      {results.map((p) => (
+                        <li
+                          key={p.id}
+                          className="p-3 hover:bg-slate-800 cursor-pointer"
+                          onMouseDown={() => goToProduct(p)}
+                        >
+                          <p className="text-xs font-semibold text-slate-100 line-clamp-1">
+                            {p.name}
+                          </p>
+                          <p className="text-[11px] text-slate-400 flex items-center justify-between gap-2">
+                            <span className="truncate">
+                              {p.category || "Sản phẩm"}
+                            </span>
+                            <span className="text-blue-400 font-medium">
+                              {formatPrice(p.price)}
+                            </span>
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
 
             {handleOrderPopup && (
@@ -63,8 +177,40 @@ const Navbar = ({ handleOrderPopup }) => {
             )}
 
             <DarkMode />
+            {/* Auth buttons */}
+              {!user ? (
+                <div className="hidden sm:flex items-center gap-2">
+                  <Link
+                    to="/login"
+                    className="px-3 py-1.5 text-xs rounded-full border border-slate-700 hover:border-sky-400 hover:text-sky-400 transition"
+                  >
+                    Đăng nhập
+                  </Link>
 
-            {/* Nút giỏ hàng cho mobile */}
+                  <Link
+                    to="/register"
+                    className="px-3 py-1.5 text-xs rounded-full bg-blue-500 hover:bg-blue-600 font-medium transition"
+                  >
+                    Đăng ký
+                  </Link>
+                </div>
+              ) : (
+                <div className="hidden sm:flex items-center gap-2 text-xs">
+                  <span className="text-slate-300 truncate max-w-[120px]">
+                    {user.email}
+                  </span>
+
+                  <button
+                    onClick={signOut}
+                    className="px-3 py-1.5 rounded-full border border-slate-700 hover:border-red-400 hover:text-red-400 transition"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+
+
+            {/* Cart mobile */}
             <Link
               to="/cart"
               className="sm:hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500 text-xs font-medium"
@@ -76,8 +222,8 @@ const Navbar = ({ handleOrderPopup }) => {
         </div>
       </div>
 
-      {/* Thanh dưới: menu + giỏ hàng */}
-      <div className="hidden sm:block">
+      {/* Thanh dưới */}
+      <div className="hidden sm:block border-b border-slate-800 relative z-[9999]">
         <div className="max-w-6xl mx-auto px-4 h-11 flex items-center justify-between">
           <ul className="flex items-center gap-4 text-xs">
             {Menu.map((item) => (
@@ -91,30 +237,58 @@ const Navbar = ({ handleOrderPopup }) => {
               </li>
             ))}
 
-            {/* Dropdown */}
-            <li className="relative group cursor-pointer">
-              <button className="flex items-center gap-1 py-1 text-xs">
+            {/* ✅ Trending dropdown (CÁCH A: click mở/đóng) */}
+            <li ref={trendingRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setOpenTrending((v) => !v)}
+                className="flex items-center gap-1 px-2 py-1 hover:text-blue-400 transition"
+              >
                 Trending Products
-                <FaCaretDown className="text-[10px] transition group-hover:rotate-180" />
+                <FaCaretDown
+                  className={`text-[10px] transition ${
+                    openTrending ? "rotate-180" : ""
+                  }`}
+                />
               </button>
-              <div className="absolute top-full left-0 mt-2 w-48 rounded-xl bg-slate-900 border border-slate-700 shadow-xl hidden group-hover:block">
-                <ul className="py-1 text-xs">
-                  {DropdownLinks.map((item) => (
-                    <li key={item.id}>
+
+              {openTrending && (
+                <div className="absolute top-full left-0 mt-2 w-48 rounded-xl bg-slate-900 border border-slate-700 shadow-xl z-[9999]">
+                  <ul className="py-1 text-xs">
+                    <li>
                       <Link
-                        to={item.link}
+                        to="/trending"
+                        onClick={() => setOpenTrending(false)}
                         className="block px-3 py-1.5 hover:bg-slate-800"
                       >
-                        {item.name}
+                        Trending Products
                       </Link>
                     </li>
-                  ))}
-                </ul>
-              </div>
+                    <li>
+                      <Link
+                        to="/best-selling"
+                        onClick={() => setOpenTrending(false)}
+                        className="block px-3 py-1.5 hover:bg-slate-800"
+                      >
+                        Best Selling
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/top-rated"
+                        onClick={() => setOpenTrending(false)}
+                        className="block px-3 py-1.5 hover:bg-slate-800"
+                      >
+                        Top Rated
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+              )}
             </li>
           </ul>
 
-          {/* Giỏ hàng (desktop) */}
+          {/* Nút giỏ hàng desktop */}
           <Link
             to="/cart"
             className="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500 text-xs font-medium hover:bg-blue-600"
